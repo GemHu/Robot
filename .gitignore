@@ -1,0 +1,6 @@
+target/
+*.iml
+bin/
+gen/
+proguard/
+local.properties

@@ -1,0 +1,22 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.dothantech.bletestdemo.MainActivity" >
+
+    <item
+        android:id="@+id/menu_refresh"
+        android:checkable="false"
+        android:orderInCategory="1"
+        android:showAsAction="ifRoom"
+        android:title=""/>
+    <item
+        android:id="@+id/menu_scan"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom|withText"
+        android:title="扫描"/>
+    <item
+        android:id="@+id/menu_stop"
+        android:orderInCategory="101"
+        android:showAsAction="ifRoom|withText"
+        android:title="停止"/>
+
+</menu>
