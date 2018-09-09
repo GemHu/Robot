@@ -3,8 +3,6 @@ package com.hu.robot;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dothantech.bletestdemo.R;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;

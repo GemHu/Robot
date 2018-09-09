@@ -65,8 +65,8 @@
         <item name="android:layout_height">match_parent</item>
         <item name="android:layout_weight">2</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:layout_marginLeft">5dp</item>
-        <item name="android:layout_marginRight">5dp</item>
+        <item name="android:layout_marginLeft">@dimen/main_text_margin</item>
+        <item name="android:layout_marginRight">@dimen/main_text_margin</item>
     </style>
 
     <style name="ll_style2">
@@ -74,8 +74,14 @@
         <item name="android:layout_height">match_parent</item>
         <item name="android:layout_weight">3</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:layout_marginLeft">7dp</item>
-        <item name="android:layout_marginRight">7dp</item>
+        <item name="android:layout_marginLeft">@dimen/main_btn_margin</item>
+        <item name="android:layout_marginRight">@dimen/main_btn_margin</item>
+    </style>
+    
+    <!-- 整个页面分成5行，也即5组 -->
+    <style name="ll_group">
+        <item name="android:paddingStart">@dimen/main_group_padding</item>
+        <item name="android:paddingEnd">@dimen/main_group_padding</item>
     </style>
 
 </resources>

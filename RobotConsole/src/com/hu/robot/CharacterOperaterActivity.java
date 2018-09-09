@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-import com.dothantech.bletestdemo.R;
 import com.hu.robot.tools.LoopValueTools;
 import com.hu.robot.tools.ResponseCheckUtils;
 

@@ -4,5 +4,7 @@
     <string name="app_name">BLEMaster</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="ble_status_connected">蓝牙已连接</string>
+    <string name="ble_status_disconnected">蓝牙未连接</string>
 
 </resources>
