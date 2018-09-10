@@ -62,8 +62,7 @@ public class DeviceInfo {
 		return map;
 	}
 	
-	public void save(SharedPreferences sp) {
-		Editor editor = sp.edit();  
+	public void save(Editor editor) {
 		editor.putString(TAG_DEVICE_NAME, this.name);
 	    editor.putString(TAG_DEVICE_ADDRESS, this.address);  
 	    editor.putInt(TAG_DEVICE_RSSI, this.rssi);

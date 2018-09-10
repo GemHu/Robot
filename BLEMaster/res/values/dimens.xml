@@ -7,5 +7,7 @@
     <dimen name="main_group_cmd_padding_right">7dp</dimen>
     <dimen name="main_text_margin">5dp</dimen>
     <dimen name="main_btn_margin">7dp</dimen>
-
+    
+    <dimen name="text_size_txt_pos">11sp</dimen>
+	<dimen name="text_size_btn_move">18sp</dimen>
 </resources>

@@ -7,4 +7,45 @@
     <string name="ble_status_connected">蓝牙已连接</string>
     <string name="ble_status_disconnected">蓝牙未连接</string>
 
+    <string name="txt_speed_min">0</string>
+    <string name="txt_speed_default">20</string>
+    <string name="txt_speed_max">100</string>
+    
+    <string name="txt_pos_title_min">MIN</string>
+    <string name="txt_pos_title_curr">当前位置</string>
+    <string name="txt_pos_title_max">MAX</string>
+    <string name="txt_pos_curr">0.0°</string>
+    
+    <string name="txt_pos_min1">-175.0°</string>
+    <string name="txt_pos_min2">-50.0°</string>
+    <string name="txt_pos_min3">-75.0°</string>
+    <string name="txt_pos_min4">-75.0°</string>
+    <string name="txt_pos_min5">-175.0°</string>
+    <string name="txt_pos_min6">-180.0°</string>
+    
+    <string name="txt_pos_max1">+175.0°</string>
+    <string name="txt_pos_max2">+50.0°</string>
+    <string name="txt_pos_max3">+75.0°</string>
+    <string name="txt_pos_max4">+75.0°</string>
+    <string name="txt_pos_max5">+175.0°</string>
+    <string name="txt_pos_max6">+180.0°</string>
+    
+    <string name="btn_move_add1">J1+</string>
+    <string name="btn_move_add2">J2+</string>
+    <string name="btn_move_add3">J3+</string>
+    <string name="btn_move_add4">J4+</string>
+    <string name="btn_move_add5">J5+</string>
+    <string name="btn_move_add6">J6+</string>
+    
+    <string name="btn_move_sub1">J1-</string>
+    <string name="btn_move_sub2">J2-</string>
+    <string name="btn_move_sub3">J3-</string>
+    <string name="btn_move_sub4">J4-</string>
+    <string name="btn_move_sub5">J5-</string>
+    <string name="btn_move_sub6">J6-</string>
+    
+    <string name="btn_trace1">轨迹1</string>
+    <string name="btn_trace2">轨迹2</string>
+    <string name="btn_trace3">轨迹3</string>
+    <string name="btn_trace4">轨迹4</string>
 </resources>

@@ -78,6 +78,7 @@ public class DeviceDialog {
 		} else {
 			map = info.getMap();
 			this.mDataList.add(map);
+			this.mDeviceMap.put(info.address, map);
 		}
 		this.mListAdapter.notifyDataSetChanged();
 	}
@@ -141,6 +142,7 @@ public class DeviceDialog {
 	public void scanDevice(OnClickListener listener) {
 		this.mOnClickListener = listener;
 		this.mDataList.clear();
+		this.mDeviceMap.clear();
 		// 1、弹出对话框；
 		this.showDialog();
 		// 2、开始三扫描BLE设备；

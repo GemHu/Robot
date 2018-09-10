@@ -99,17 +99,17 @@
 	                android:layout_alignParentStart="true"
 	                android:layout_width="wrap_content"
 	                android:layout_height="wrap_content"
-	                android:text="0"/>
+	                android:text="@string/txt_speed_min"/>
 	            <TextView 
 	                android:layout_alignParentEnd="true"
 	                android:layout_width="wrap_content"
 	                android:layout_height="wrap_content"
-	                android:text="100"/>
+	                android:text="@string/txt_speed_max"/>
 	            <TextView 
 	                android:layout_centerHorizontal="true"
 	                android:layout_width="wrap_content"
 	                android:layout_height="wrap_content"
-	                android:text="20"/>
+	                android:text="@string/txt_speed_default"/>
 	        </RelativeLayout>
 	    </LinearLayout>
 	</LinearLayout>
@@ -122,17 +122,21 @@
         android:layout_alignParentBottom="true"
         android:orientation="horizontal">
         <Button 
+            android:id="@+id/btn_trace1"
             style="@style/btnStyle2"
-            android:text="轨迹1"/>
+            android:text="@string/btn_trace1"/>
         <Button 
+            android:id="@+id/btn_trace2"
             style="@style/btnStyle2"
-            android:text="轨迹2"/>
+            android:text="@string/btn_trace2"/>
         <Button 
+            android:id="@+id/btn_trace3"
             style="@style/btnStyle2"
-            android:text="轨迹3"/>
+            android:text="@string/btn_trace3"/>
         <Button 
+            android:id="@+id/btn_trace4"
             style="@style/btnStyle2"
-            android:text="轨迹4"/>
+            android:text="@string/btn_trace4"/>
     </LinearLayout>
     <LinearLayout 
         android:id="@+id/group_line5"
@@ -146,19 +150,19 @@
             style="@style/ll_style1"
             android:gravity="center"
             android:layout_weight="1.8"
-            android:text="MIN"/>
+            android:text="@string/txt_pos_title_min"/>
         <TextView 
             style="@style/ll_style1"
             android:gravity="center"
             android:layout_marginLeft="0dp"
             android:layout_marginRight="0dp"
             android:layout_weight="2.4"
-            android:text="当前位置"/>
+            android:text="@string/txt_pos_title_curr"/>
         <TextView 
             style="@style/ll_style1"
             android:gravity="center"
             android:layout_weight="1.8"
-            android:text="MAX"/>
+            android:text="@string/txt_pos_title_max"/>
         <View 
             style="@style/ll_style2"/>
         <View 
@@ -177,112 +181,142 @@
         <LinearLayout 
             style="@style/ll_style1">
             <TextView 
+                android:id="@+id/txt_pos_min6"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_min6"/>
             <TextView 
+                android:id="@+id/txt_pos_min5"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_min5"/>
             <TextView 
+                android:id="@+id/txt_pos_min4"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_min4"/>
             <TextView 
+                android:id="@+id/txt_pos_min3"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_min3"/>
             <TextView 
+                android:id="@+id/txt_pos_min2"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_min2"/>
             <TextView 
+                android:id="@+id/txt_pos_min1"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_min1"/>
         </LinearLayout>
         <!-- 第2列 -->
         <LinearLayout 
             style="@style/ll_style1">
             <TextView 
+                android:id="@+id/txt_pos_curr6"
                 style="@style/text1"
-                android:text="0.0"/>
+                android:text="@string/txt_pos_curr"/>
             <TextView 
+                android:id="@+id/txt_pos_curr5"
                 style="@style/text1"
-                android:text="0.0"/>
+                android:text="@string/txt_pos_curr"/>
             <TextView 
+                android:id="@+id/txt_pos_curr4"
                 style="@style/text1"
-                android:text="0.0"/>
+                android:text="@string/txt_pos_curr"/>
             <TextView 
+                android:id="@+id/txt_pos_curr3"
                 style="@style/text1"
-                android:text="0.0"/>
+                android:text="@string/txt_pos_curr"/>
             <TextView 
+                android:id="@+id/txt_pos_curr2"
                 style="@style/text1"
-                android:text="0.0"/>
+                android:text="@string/txt_pos_curr"/>
             <TextView 
+                android:id="@+id/txt_pos_curr1"
                 style="@style/text1"
-                android:text="0.0"/>
+                android:text="@string/txt_pos_curr"/>
         </LinearLayout>
         <!-- 第3列 -->
         <LinearLayout 
             style="@style/ll_style1">
             <TextView 
+                android:id="@+id/txt_pos_max6"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_max6"/>
             <TextView 
+                android:id="@+id/txt_pos_max5"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_max5"/>
             <TextView 
+                android:id="@+id/txt_pos_max4"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_max4"/>
             <TextView 
+                android:id="@+id/txt_pos_max3"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_max3"/>
             <TextView 
+                android:id="@+id/txt_pos_max2"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_max2"/>
             <TextView 
+                android:id="@+id/txt_pos_max1"
                 style="@style/text3"
-                android:text="-180"/>
+                android:text="@string/txt_pos_max1"/>
         </LinearLayout>
         <!-- 第4列 -->
         <LinearLayout 
             style="@style/ll_style2">
             <Button 
+                android:id="@+id/btn_move_add6"
                 style="@style/btn1"
-                android:text="J1+"/>
+                android:text="@string/btn_move_add6"/>
             <Button 
+                android:id="@+id/btn_move_add5"
                 style="@style/btn1"
-                android:text="J1+"/>
+                android:text="@string/btn_move_add5"/>
             <Button 
+                android:id="@+id/btn_move_add4"
                 style="@style/btn1"
-                android:text="J1+"/>
+                android:text="@string/btn_move_add4"/>
             <Button 
+                android:id="@+id/btn_move_add3"
                 style="@style/btn1"
-                android:text="J1+"/>
+                android:text="@string/btn_move_add3"/>
             <Button 
+                android:id="@+id/btn_move_add2"
                 style="@style/btn1"
-                android:text="J1+"/>
+                android:text="@string/btn_move_add2"/>
             <Button 
+                android:id="@+id/btn_move_add1"
                 style="@style/btn1"
-                android:text="J1+"/>
+                android:text="@string/btn_move_add1"/>
         </LinearLayout>
         <!-- 第5列 -->
         <LinearLayout 
             style="@style/ll_style2">
             
             <Button 
+                android:id="@+id/btn_move_sub6"
                 style="@style/btn1"
-                android:text="J1-"/>
+                android:text="@string/btn_move_sub6"/>
             <Button 
+                android:id="@+id/btn_move_sub5"
                 style="@style/btn1"
-                android:text="J1-"/>
+                android:text="@string/btn_move_sub5"/>
             <Button 
+                android:id="@+id/btn_move_sub4"
                 style="@style/btn1"
-                android:text="J1-"/>
+                android:text="@string/btn_move_sub4"/>
             <Button 
+                android:id="@+id/btn_move_sub3"
                 style="@style/btn1"
-                android:text="J1-"/>
+                android:text="@string/btn_move_sub3"/>
             <Button 
+                android:id="@+id/btn_move_sub2"
                 style="@style/btn1"
-                android:text="J1-"/>
+                android:text="@string/btn_move_sub2"/>
             <Button 
+                android:id="@+id/btn_move_sub1"
                 style="@style/btn1"
-                android:text="J1-"/>
+                android:text="@string/btn_move_sub1"/>
         </LinearLayout>
     </LinearLayout>
 
