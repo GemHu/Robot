@@ -38,7 +38,8 @@
     </style>
 
     <style name="text3" parent="@style/text">
-        <item name="android:background">@drawable/txt_bg_red</item>
+        <item name="android:background">@drawable/edit_bg_limit</item>
+        <item name="android:imeOptions">actionDone</item>
     </style>
 
     <style name="btn1" parent="@style/text">

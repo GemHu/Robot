@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="action_set_zeropoint" type="id">action1</item>
+    <item name="action_set_speed" type="id">action2</item>
+    <item name="action_set_minlimit" type="id">action3</item>
+    <item name="action_set_maxlimit" type="id">action4</item>
+    <item name="action_start_move" type="id"></item>
+    <item name="action_stop_move" type="id"></item>
+    <item name="action_running_trace" type="id"></item>
+    <item name="action_switch_mode" type="id"></item>
+    <item name="action_get_speed" type="id"></item>
+    <item name="action_get_pos" type="id"></item>
+    
+</resources>

@@ -84,6 +84,7 @@
 	        android:layout_marginEnd="15dp"
 	        android:orientation="vertical">
 	        <SeekBar 
+	            android:id="@+id/device_running_speed_sb"
 	            android:layout_width="match_parent"
 	            android:layout_height="wrap_content"
 	            android:paddingStart="0dp"
@@ -106,6 +107,7 @@
 	                android:layout_height="wrap_content"
 	                android:text="@string/txt_speed_max"/>
 	            <TextView 
+	                android:id="@+id/device_running_speed_curr"
 	                android:layout_centerHorizontal="true"
 	                android:layout_width="wrap_content"
 	                android:layout_height="wrap_content"
@@ -180,27 +182,27 @@
         <!-- 第1列 -->
         <LinearLayout 
             style="@style/ll_style1">
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_min6"
                 style="@style/text3"
                 android:text="@string/txt_pos_min6"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_min5"
                 style="@style/text3"
                 android:text="@string/txt_pos_min5"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_min4"
                 style="@style/text3"
                 android:text="@string/txt_pos_min4"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_min3"
                 style="@style/text3"
                 android:text="@string/txt_pos_min3"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_min2"
                 style="@style/text3"
                 android:text="@string/txt_pos_min2"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_min1"
                 style="@style/text3"
                 android:text="@string/txt_pos_min1"/>
@@ -236,27 +238,27 @@
         <!-- 第3列 -->
         <LinearLayout 
             style="@style/ll_style1">
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_max6"
                 style="@style/text3"
                 android:text="@string/txt_pos_max6"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_max5"
                 style="@style/text3"
                 android:text="@string/txt_pos_max5"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_max4"
                 style="@style/text3"
                 android:text="@string/txt_pos_max4"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_max3"
                 style="@style/text3"
                 android:text="@string/txt_pos_max3"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_max2"
                 style="@style/text3"
                 android:text="@string/txt_pos_max2"/>
-            <TextView 
+            <EditText 
                 android:id="@+id/txt_pos_max1"
                 style="@style/text3"
                 android:text="@string/txt_pos_max1"/>

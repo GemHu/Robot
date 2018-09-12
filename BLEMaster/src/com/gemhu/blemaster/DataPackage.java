@@ -1,5 +1,7 @@
 package com.gemhu.blemaster;
 
+import android.bluetooth.BluetoothGattCharacteristic;
+
 public class DataPackage {
 
 	public class Header{
@@ -24,27 +26,92 @@ public class DataPackage {
 		public final static byte GetSpeed = 0x09;	//：返回速度（设备上传）
 		public final static byte GetPos = 0x0A;	//：返回位置（设备上传）
 	}
-	public class Axis{
-		public final static byte AllAxis = 0x00;
-		public final static byte Axis1 = 0x01;
-		public final static byte Axis2 = 0x02;
-		public final static byte Axis3 = 0x03;
-		public final static byte Axis4 = 0x04;
-		public final static byte Axis5 = 0x05;
-		public final static byte Axis6 = 0x06;
+
+	public final static byte RUNNING_TRACE1 = 0x01;
+	public final static byte RUNNING_TRACE2 = 0x02;
+	public final static byte RUNNING_TRACE3 = 0x03;
+	public final static byte RUNNING_TRACE4 = 0x04;
+	
+	public final static byte MOVING_DIRECT = 0x01;
+	public final static byte MOVING_REVERSE = 0x02;
+	
+	public final static byte RESPONSE_NORMAL = 0x00;
+	public final static byte RESPONSE_CHECK_ERROR = 0x01;
+	
+	public final static byte ZERO = 0x00;
+	
+	public static DataPackage getDataOfSetZeroCmd() {
+		return new DataPackage(Header.Download, Command.SetZeroPoint);
 	}
+	
+	public static DataPackage getDataOfSetSpeed() {
+		return new DataPackage(Header.Download, Command.SetSpeed);
+	}
+	
+	public static DataPackage getDataOfSetMinLimit() {
+		return new DataPackage(Header.Download, Command.SetMinPosLimit);
+	}
+	
+	public static DataPackage getDataOfSetMaxLimit() {
+		return new DataPackage(Header.Download, Command.SetMaxPosLimit);
+	}
+	
+	public static DataPackage getDataOfStartMove() {
+		return new DataPackage(Header.Download, Command.StartMove);
+	}
+	
+	public static DataPackage getDataOfStopMove() {
+		return new DataPackage(Header.Download, Command.StopMove);
+	}
+	
+	public static DataPackage getDataOfRunningTrace() {
+		return new DataPackage(Header.Download, Command.TraceRunning);
+	}
+	
+	public static DataPackage getDataOfSwitchMode() {
+		return new DataPackage(Header.Download, Command.SwitchMode);
+	}
+	
+	public static DataPackage getDataOfGetSpeed() {
+		return new DataPackage(Header.Upload, Command.GetSpeed);
+	}
+	
+	public static DataPackage getDataOfGetPos() {
+		return new DataPackage(Header.Upload, Command.GetPos);
+	}
+	
+	private byte[] mData = new byte[6];
 	
 //	private byte[] mData = new byte[6];
 	
-	public DataPackage(byte header, byte cmd, byte axis) {
-		
+	private DataPackage(byte header, byte cmd) {
+		// header
+		this.mData[0] = header;
+		// cmd
+		this.mData[1] = cmd;
+		// axis
+		this.mData[2] = 0x00;
 	}
 	
-	public void setData(byte high, byte low) {
+	public DataPackage setAxis(byte axis) {
+		this.mData[2] = axis;
 		
+		return this;
 	}
 	
-	public void send() {
+	public DataPackage setData(byte high, byte low) {
+		this.mData[3] = high;
+		this.mData[4] = low;
 		
+		return this;
+	}
+	
+	private void check() {
+		this.mData[5] = (byte) (this.mData[1] + this.mData[2] + this.mData[3] + this.mData[4]);
+	}
+	
+	public void setCharecteristic(BluetoothGattCharacteristic characteristic) {
+		this.check();
+		characteristic.setValue(this.mData);
 	}
 }
