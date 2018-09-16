@@ -106,7 +106,7 @@ public class DataPackage {
 		return this;
 	}
 	
-	private void check() {
+	public void check() {
 		this.mData[5] = (byte) (this.mData[1] + this.mData[2] + this.mData[3] + this.mData[4]);
 	}
 	

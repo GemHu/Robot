@@ -3,6 +3,8 @@ package com.gemhu.blemaster;
 import java.util.List;
 import java.util.UUID;
 
+import com.gemhu.blemaster.BLEGattCallback.OnResponseListener;
+
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -142,13 +144,14 @@ public class BLEService extends Service {
         mBluetoothGatt.readCharacteristic(characteristic);
     }
     
-    public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
+    public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, OnResponseListener listener) {
     	if (mBluetoothAdapter == null || mBluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized");
-            return;
+            return false;
         }
     	
-    	this.mBluetoothGatt.writeCharacteristic(characteristic);
+    	this.mGattCallback.mResponseListener = listener;
+    	return this.mBluetoothGatt.writeCharacteristic(characteristic);
 	}
     
     /**

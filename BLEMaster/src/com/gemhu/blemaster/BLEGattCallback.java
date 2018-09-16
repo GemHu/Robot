@@ -22,6 +22,10 @@ public class BLEGattCallback extends BluetoothGattCallback {
     public final static String EXTRA_DATA                      = "com.gemhu.ble.EXTRA_DATA";
 
 	private BLEService mService;
+	interface OnResponseListener {
+		void onResponse(int stage, BluetoothGattCharacteristic characteristic);
+	}
+	public OnResponseListener mResponseListener;
 	
 	public BLEGattCallback(BLEService service) {
 		this.mService = service;
@@ -72,20 +76,32 @@ public class BLEGattCallback extends BluetoothGattCallback {
         if (status == BluetoothGatt.GATT_SUCCESS) {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
+        if (this.mResponseListener != null)
+        	this.mResponseListener.onResponse(0, characteristic);
     }
 
+    /**
+     * 消息检测回调函数（可能需要设置监听特征值）；
+     */
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt,
                                         BluetoothGattCharacteristic characteristic) {
         broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+        if (this.mResponseListener != null)
+        	this.mResponseListener.onResponse(2, characteristic);
     }
     
+    /**
+     * 数据发送成功回调函数；
+     */
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-    	// super.onCharacteristicWrite(gatt, characteristic, status);
-//    	if (status == BluetoothGatt.GATT_SUCCESS)
-//    		Log.i(TAG, "Write SUCCESS");
-//    	else 
-//    		Log.i(TAG, "Write Faild!");
+    	 super.onCharacteristicWrite(gatt, characteristic, status);
+    	if (status == BluetoothGatt.GATT_SUCCESS)
+    		Log.i(TAG, "Write SUCCESS");
+    	else 
+    		Log.i(TAG, "Write Faild!");
+        if (this.mResponseListener != null)
+        	this.mResponseListener.onResponse(1, characteristic);
     };
     
     public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {

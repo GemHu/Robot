@@ -1,5 +1,7 @@
 package com.gemhu.blemaster;
 
+import com.gemhu.blemaster.BLEGattCallback.OnResponseListener;
+
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
@@ -7,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 /**
  * 机器人相关控制操作管理类；
@@ -64,7 +67,8 @@ public class RobotManager {
 	}
 	
 	public void onResume() {
-
+		//
+		
 		// 注册广播接收器，用于接受蓝牙先关信息；
 		this.mContext.registerReceiver(this.mGattUpdateReceiver, makeGattUpdateIntentFilter());
 		// 自动连接蓝牙设备；
@@ -263,10 +267,22 @@ public class RobotManager {
 	private boolean executeCmd(DataPackage data) {
 		if (data == null || this.mCharacteristic == null || this.mService == null)
 			return false;
+		if ((this.mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE) == 0) {
+			Toast.makeText(mContext, "当前特征值不支持数据发送操作", Toast.LENGTH_LONG).show();
+			return false;
+		}
 		
 		data.setCharecteristic(this.mCharacteristic);
-		this.mService.writeCharacteristic(this.mCharacteristic);
-		
-		return true;
+		this.mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+		return this.mService.writeCharacteristic(this.mCharacteristic, new OnResponseListener() {
+			
+			@Override
+			public void onResponse(int stage, BluetoothGattCharacteristic characteristic) {
+				String tag = stage == 0 ? "OnRead:" : (stage == 1 ? "OnWrite:" : "OnChanged:");
+				String msg = Utils.bytesToHexString(characteristic.getValue());
+				
+				Toast.makeText(mContext, tag + (msg == null ? "" : msg), Toast.LENGTH_LONG).show();
+			}
+		});
 	}
 }

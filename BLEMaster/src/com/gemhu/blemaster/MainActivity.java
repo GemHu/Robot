@@ -6,20 +6,20 @@ import com.gemhu.blemaster.RobotManager.OnConnectChangedListener;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -30,6 +30,7 @@ import android.widget.Toast;
 @SuppressLint("InflateParams")
 public class MainActivity extends Activity implements OnClickListener, OnEditorActionListener {
 
+	private static final int REQUEST_ENABLE_BT = 0x01;
 	private final static String TAG = MainActivity.class.getSimpleName();
 	private DeviceDialog mDeviceDialog;
 	private RobotManager mRobotManager;
@@ -50,6 +51,24 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 			R.id.txt_pos_max4, //
 			R.id.txt_pos_max5, //
 			R.id.txt_pos_max6 //
+	};
+	private int[] btnIds = { //
+			R.id.btn_move_add1, //
+			R.id.btn_move_add2, //
+			R.id.btn_move_add3, //
+			R.id.btn_move_add4, //
+			R.id.btn_move_add5, //
+			R.id.btn_move_add6, //
+			R.id.btn_move_sub1, //
+			R.id.btn_move_sub2, //
+			R.id.btn_move_sub3, //
+			R.id.btn_move_sub4, //
+			R.id.btn_move_sub5, //
+			R.id.btn_move_sub6, //
+			R.id.btn_trace1, //
+			R.id.btn_trace2, //
+			R.id.btn_trace3, //
+			R.id.btn_trace4 //
 	};
 
 	private OnSeekBarChangeListener mOnSpeedChangedListener = new OnSeekBarChangeListener() {
@@ -86,6 +105,8 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 	@Override
 	protected void onResume() {
 		super.onResume();
+		this.checkAndOpenBLE();
+
 		mRobotManager.onResume();
 	}
 
@@ -106,13 +127,23 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		this.txtConnectStateName = (TextView) findViewById(R.id.ble_status_name);
 		//
 		onRunningModeChanged();
-		//
-
+		// 设置相关编辑框输入相应事件；
 		for (int id : limitIds) {
-			((EditText)findViewById(id)).setOnEditorActionListener(this);
+			((EditText) findViewById(id)).setOnEditorActionListener(this);
 		}
-//		edit.addTextChangedListener(new TextWatcher() {
-//		});
+		// 设置相关按键点击事件；
+		for (int id : btnIds) {
+			findViewById(id).setOnClickListener(this);
+		}
+	}
+
+	private void checkAndOpenBLE() {
+		BluetoothManager bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
+		BluetoothAdapter adapter = bluetoothManager.getAdapter();
+		if (!adapter.isEnabled()) {
+			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+		}
 	}
 
 	private void initRobotManager() {
