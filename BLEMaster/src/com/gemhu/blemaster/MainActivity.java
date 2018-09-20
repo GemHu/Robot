@@ -3,6 +3,7 @@ package com.gemhu.blemaster;
 import java.util.Map;
 
 import com.gemhu.blemaster.RobotManager.OnConnectChangedListener;
+import com.gemhu.blemaster.RobotManager.OnDataChangedListener;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -38,6 +39,8 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 	private TextView txtDeviceName;
 	private View viewConnectState;
 	private TextView txtConnectStateName;
+	private TextView mtxtRunSpeed;
+	
 	private int[] limitIds = { //
 			R.id.txt_pos_min1, //
 			R.id.txt_pos_min2, //
@@ -126,6 +129,8 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		this.viewConnectState = findViewById(R.id.ble_status_icon);
 		this.txtConnectStateName = (TextView) findViewById(R.id.ble_status_name);
 		//
+		this.mtxtRunSpeed = (TextView)findViewById(R.id.txt_running_speed_curr);
+		//
 		onRunningModeChanged();
 		// 设置相关编辑框输入相应事件；
 		for (int id : limitIds) {
@@ -168,6 +173,33 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 					viewConnectState.setBackgroundResource(R.drawable.ble_state_disconnected);
 
 				}
+			}
+		});
+		this.mRobotManager.setOnDataChangedListener(new OnDataChangedListener() {
+			
+			@Override
+			public void onSpeedChanged(int speed) {
+				mtxtRunSpeed.setText(speed + "RPM");
+			}
+			
+			@Override
+			public void onPosChanged(float pos, int axis) {
+				TextView currView = null;
+				if (axis == 1)
+					currView = (TextView) findViewById(R.id.txt_pos_curr1);
+				if (axis == 2)
+					currView = (TextView) findViewById(R.id.txt_pos_curr2);
+				if (axis == 3)
+					currView = (TextView) findViewById(R.id.txt_pos_curr3);
+				if (axis == 4)
+					currView = (TextView) findViewById(R.id.txt_pos_curr4);
+				if (axis == 5)
+					currView = (TextView) findViewById(R.id.txt_pos_curr5);
+				if (axis == 6)
+					currView = (TextView) findViewById(R.id.txt_pos_curr6);
+				
+				if (currView != null)
+					currView.setText((pos > 0 ? "+" : "") + "°"); 
 			}
 		});
 		//

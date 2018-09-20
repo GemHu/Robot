@@ -80,9 +80,18 @@ public class DataPackage {
 		return new DataPackage(Header.Upload, Command.GetPos);
 	}
 	
+	public static DataPackage create(byte[] data) {
+		if (data == null || data.length != 6)
+			return null;
+		
+		return new DataPackage(data);
+	}
+	
 	private byte[] mData = new byte[6];
 	
-//	private byte[] mData = new byte[6];
+	private DataPackage(byte[] data) {
+		this.mData = data;
+	}
 	
 	private DataPackage(byte header, byte cmd) {
 		// header
@@ -93,10 +102,30 @@ public class DataPackage {
 		this.mData[2] = 0x00;
 	}
 	
+	public boolean isUpload() {
+		return this.mData[0] == Header.Upload;
+	}
+	
+	public boolean isGetSpeed() {
+		return this.mData[1] == Command.GetSpeed;
+	}
+	
+	public boolean isGetPos() {
+		return this.mData[1] == Command.GetPos;
+	}
+	
+	public byte getCmd() {
+		return this.mData[1];
+	}
+	
 	public DataPackage setAxis(byte axis) {
 		this.mData[2] = axis;
 		
 		return this;
+	}
+	
+	public byte getAxis() {
+		return this.mData[2];
 	}
 	
 	public DataPackage setData(byte high, byte low) {
@@ -106,12 +135,34 @@ public class DataPackage {
 		return this;
 	}
 	
-	public void check() {
-		this.mData[5] = (byte) (this.mData[1] + this.mData[2] + this.mData[3] + this.mData[4]);
+	public byte getCheckCode() {
+		return (byte) (this.mData[1] + this.mData[2] + this.mData[3] + this.mData[4]);
+	}
+	
+	public void setCheckCode() {
+		this.mData[5] = this.getCheckCode();
+	}
+	
+	public boolean isCheckOK(byte code) {
+		return code == this.getCheckCode();
+	}
+	
+	public boolean isCheckedOk() {
+		return this.mData[5] == this.getCheckCode();
 	}
 	
 	public void setCharecteristic(BluetoothGattCharacteristic characteristic) {
-		this.check();
+		this.setCheckCode();
 		characteristic.setValue(this.mData);
+	}
+	
+	public int getSpeed() {
+		int speed = this.mData[3] << 8 + this.mData[4];
+		return (int) (speed * 0.1);
+	}
+	
+	public float getPos() {
+		int pos = this.mData[3] << 8 + this.mData[4];
+		return pos * 0.1f;
 	}
 }

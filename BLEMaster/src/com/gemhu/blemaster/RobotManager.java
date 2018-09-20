@@ -2,7 +2,9 @@ package com.gemhu.blemaster;
 
 import com.gemhu.blemaster.BLEGattCallback.OnResponseListener;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,6 +15,7 @@ import android.widget.Toast;
 
 /**
  * 机器人相关控制操作管理类；
+ * 
  * @author hdx_h
  *
  */
@@ -21,11 +24,19 @@ public class RobotManager {
 	private BLEService mService;
 	private BluetoothGattCharacteristic mCharacteristic;
 	private OnConnectChangedListener mChangedListener;
-	
+	private OnDataChangedListener mOnDataChangedListener;
+
 	interface OnConnectChangedListener {
 		void OnStateChanged(boolean connected);
 	}
 	
+	interface OnDataChangedListener{
+		
+		void onSpeedChanged(int speed);
+		
+		void onPosChanged(float pos, int axis);
+	}
+
 	/**
 	 * 创建一个广播接收器，用于接受蓝牙服务发送的相关信息； ACTION_GATT_CONNECTED: GATT服务连接成功；
 	 * ACTION_GATT_DISCONNECTED: GATT服务断开连接； ACTION_GATT_SERVICES_DISCOVERED:
@@ -44,37 +55,55 @@ public class RobotManager {
 				mCharacteristic = null;
 				if (mChangedListener != null)
 					mChangedListener.OnStateChanged(false);
+			} else if (BLEGattCallback.ACTION_DATA_AVAILABLE.equals(action)) {
+				// 接收到消息
+				byte[] data = intent.getByteArrayExtra(BLEGattCallback.EXTRA_DATA);
+				if (data != null)
+					RobotManager.this.onReceiveData(data);
 			} else if (BLEGattCallback.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
 				// Show all the supported services and characteristics on the user interface.
 				// displayGattServices(mBleService.getSupportedGattServices());
 				if (mService == null)
 					return;
-				
+
 				mCharacteristic = getCharacteristic();
 				if (mCharacteristic == null) {
 					mService.disconnect();
-				} else if (mChangedListener != null) {
+					return;
+				}
+				// 更新蓝牙连接状态；
+				
+				if (mChangedListener != null) {
 					mChangedListener.OnStateChanged(true);
 				}
+				// 订阅特征值，用于接收信息
+				if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0)
+					return;
+				BluetoothGattDescriptor descriptor = mCharacteristic.getDescriptor(BLEUUID.CONFIG);
+				if (descriptor == null)
+					return;
+				descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+				mService.mBluetoothGatt.writeDescriptor(descriptor);
+				mService.mBluetoothGatt.setCharacteristicNotification(mCharacteristic, true);
 			}
 		}
 	};
-	
-	private Context mContext;
 
-	public RobotManager(Context context) {
+	private Activity mContext;
+
+	public RobotManager(Activity context) {
 		this.mContext = context;
 	}
-	
+
 	public void onResume() {
 		//
-		
+
 		// 注册广播接收器，用于接受蓝牙先关信息；
 		this.mContext.registerReceiver(this.mGattUpdateReceiver, makeGattUpdateIntentFilter());
 		// 自动连接蓝牙设备；
 		this.connectDevice(AppConfig.getDeviceInfo(this.mContext));
 	}
-	
+
 	public void onPause() {
 		// 断开连接
 		if (this.mService != null)
@@ -95,38 +124,73 @@ public class RobotManager {
 		this.mService = service;
 		this.connectDevice(AppConfig.getDeviceInfo(this.mContext));
 	}
-	
+
 	public void setDeviceInfo(DeviceInfo device) {
 		AppConfig.setDeviceInfo(mContext, device);
 		this.connectDevice(device);
 	}
-	
+
 	public void setOnConnectChangedListener(OnConnectChangedListener listener) {
 		this.mChangedListener = listener;
 	}
 	
+	public void setOnDataChangedListener(OnDataChangedListener listener) {
+		this.mOnDataChangedListener  = listener;
+	}
+
 	private BluetoothGattCharacteristic getCharacteristic() {
 		BluetoothGattService service = this.mService.getGattService(BLEUUID.SERVICE);
 		if (service == null)
 			return null;
-		
+
 		return service.getCharacteristic(BLEUUID.WRITE);
 	}
-	
+
 	private void connectDevice(DeviceInfo device) {
 		if (this.mService == null || device == null || TextUtils.isEmpty(device.address))
 			return;
-		
+
 		this.mService.connect(device.address);
 	}
-	
+
+	// -----------------------------------------------//
+	// 接收到底层发过来的数据，或者读取到的数据；
 	//------------------------------------------------//
-	//--------------- 执行操作命令 -----------------------//
-	//------------------------------------------------//
+	private void onReceiveData(byte[] data) {
+		String msg = Utils.bytesToHexString(data);
+		Toast.makeText(mContext, msg, Toast.LENGTH_LONG).show();
+
+		DataPackage pkg = DataPackage.create(data);
+		if(pkg == null)
+			return;
+		
+		if (!pkg.isCheckedOk()) {
+			Toast.makeText(mContext, "数据校验错误", Toast.LENGTH_LONG).show();
+			return;
+		}
+		//
+		if (this.mOnDataChangedListener == null)
+			return;
+		
+		if (pkg.isUpload()) {
+			if (pkg.isGetSpeed()) {
+				// 更新速度信息；
+				this.mOnDataChangedListener.onSpeedChanged(pkg.getSpeed());
+			} else if (pkg.isGetPos()) {
+				// 更新位置信息；
+				this.mOnDataChangedListener.onPosChanged(pkg.getPos(), pkg.getAxis());
+			}
+		}
+	}
 	
+	// ------------------------------------------------//
+	// --------------- 执行操作命令 -----------------------//
+	// ------------------------------------------------//
+
 	/**
 	 * 此命令可以为机械手提供机械零点，在无限位模式下控制各关节到达机械零位，下发该命令即可将当前位置设置为零点。
 	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 
 	 * @return
 	 */
 	public boolean executeSetZeroPoint() {
@@ -134,26 +198,28 @@ public class RobotManager {
 		byte low = 0x64;
 		DataPackage data = DataPackage.getDataOfSetZeroCmd();
 		data.setData(high, low);
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
-	 * 此命令可以设置机械手各关节运行速度，0~100 百分比形式。
-	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 此命令可以设置机械手各关节运行速度，0~100 百分比形式。 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3
+	 * 次丢包提示通讯中断。
+	 * 
 	 * @param speed
 	 * @return
 	 */
 	public boolean executeSetSpeed(int speed) {
 		DataPackage data = DataPackage.getDataOfSetSpeed();
-		data.setData(DataPackage.ZERO, (byte)speed);
+		data.setData(DataPackage.ZERO, (byte) speed);
 
 		return this.executeCmd(data);
 	}
-	
+
 	/**
-	 * 此命令可以设置各个轴的反方向运动停止点，单位 0.1°，有符号整型数据。
-	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 此命令可以设置各个轴的反方向运动停止点，单位 0.1°，有符号整型数据。 下位机收到该命令后需要按照应答格式返回命令，手机 2
+	 * 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 
 	 * @param minValue
 	 * @return
 	 */
@@ -162,15 +228,16 @@ public class RobotManager {
 		byte high = (byte) (iValue >> 8 & 0xFF);
 		byte low = (byte) (iValue & 0xFF);
 		DataPackage data = DataPackage.getDataOfSetMinLimit();
-		data.setAxis((byte)axis);
+		data.setAxis((byte) axis);
 		data.setData(high, low);
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
-	 * 此命令可以设置各个轴的正方向运动停止点，单位 0.1°，有符号整型数据。
-	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 此命令可以设置各个轴的正方向运动停止点，单位 0.1°，有符号整型数据。 下位机收到该命令后需要按照应答格式返回命令，手机 2
+	 * 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 
 	 * @param maxValue
 	 * @return
 	 */
@@ -179,15 +246,16 @@ public class RobotManager {
 		byte high = (byte) (iValue >> 8 & 0xFF);
 		byte low = (byte) (iValue & 0xFF);
 		DataPackage data = DataPackage.getDataOfSetMinLimit();
-		data.setAxis((byte)axis);
+		data.setAxis((byte) axis);
 		data.setData(high, low);
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
-	 * 该命令可以控制机械手各个轴开始运动，数据域表示运动方向。
-	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 该命令可以控制机械手各个轴开始运动，数据域表示运动方向。 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3
+	 * 次丢包提示通讯中断。
+	 * 
 	 * @param axis
 	 * @param forward
 	 * @return
@@ -196,27 +264,28 @@ public class RobotManager {
 		byte high = 0x00;
 		byte low = forward ? DataPackage.MOVING_DIRECT : DataPackage.MOVING_REVERSE;
 		DataPackage data = DataPackage.getDataOfStartMove();
-		data.setAxis((byte)axis);
+		data.setAxis((byte) axis);
 		data.setData(high, low);
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
-	 * 该命令可以控制机械手各个轴停止运动。
-	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 该命令可以控制机械手各个轴停止运动。 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 
 	 * @return
 	 */
 	public boolean executeStopMove(int axis) {
 		DataPackage data = DataPackage.getDataOfStopMove();
-		data.setAxis((byte)axis);
-		
+		data.setAxis((byte) axis);
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
-	 * 该命令可以控制机械手按照预设好的轨迹运行。
-	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 该命令可以控制机械手按照预设好的轨迹运行。 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3
+	 * 次丢包提示通讯中断。
+	 * 
 	 * @param traceType
 	 * @return
 	 */
@@ -224,13 +293,14 @@ public class RobotManager {
 		byte low = (byte) traceType;
 		DataPackage data = DataPackage.getDataOfRunningTrace();
 		data.setData(DataPackage.ZERO, low);
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
-	 * 该命令可以设置机械手当前运行模式：无限位模式、标准模式。
-	 * 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3 次丢包提示通讯中断。
+	 * 该命令可以设置机械手当前运行模式：无限位模式、标准模式。 下位机收到该命令后需要按照应答格式返回命令，手机 2 秒内没有收到应答认为命令丢包，连续 3
+	 * 次丢包提示通讯中断。
+	 * 
 	 * @param isNormalMode
 	 * @return
 	 */
@@ -238,50 +308,62 @@ public class RobotManager {
 		byte low = (byte) (isNormalMode ? 0x02 : 0x01);
 		DataPackage data = DataPackage.getDataOfSwitchMode();
 		data.setData(DataPackage.ZERO, low);
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
 	 * 该命令由设备主动上传，上位机收到命令后解析并做相应的数据展示，无需应答。
+	 * 
 	 * @return
 	 */
 	public boolean executeGetSpeed() {
 		DataPackage data = DataPackage.getDataOfGetSpeed();
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	/**
 	 * 该命令由设备主动上传，上位机收到命令后解析并做相应的数据展示，无需应答。
+	 * 
 	 * @param axis
 	 * @return
 	 */
 	public boolean executeGetPosition(byte axis) {
 		DataPackage data = DataPackage.getDataOfGetPos();
 		data.setAxis(axis);
-		
+
 		return this.executeCmd(data);
 	}
-	
+
 	private boolean executeCmd(DataPackage data) {
 		if (data == null || this.mCharacteristic == null || this.mService == null)
 			return false;
-		if ((this.mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE) == 0) {
+		int property = this.mCharacteristic.getProperties();
+		if ((property & BluetoothGattCharacteristic.PROPERTY_WRITE) == 0
+				&& (property & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) == 0) {
 			Toast.makeText(mContext, "当前特征值不支持数据发送操作", Toast.LENGTH_LONG).show();
 			return false;
 		}
-		
+
 		data.setCharecteristic(this.mCharacteristic);
 		this.mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
 		return this.mService.writeCharacteristic(this.mCharacteristic, new OnResponseListener() {
-			
+
 			@Override
 			public void onResponse(int stage, BluetoothGattCharacteristic characteristic) {
-				String tag = stage == 0 ? "OnRead:" : (stage == 1 ? "OnWrite:" : "OnChanged:");
-				String msg = Utils.bytesToHexString(characteristic.getValue());
-				
-				Toast.makeText(mContext, tag + (msg == null ? "" : msg), Toast.LENGTH_LONG).show();
+
+				final String tag = stage == 0 ? "OnRead:" : (stage == 1 ? "OnWrite:" : "OnChanged:");
+				final String msg = Utils.bytesToHexString(characteristic.getValue());
+
+				mContext.runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						Toast.makeText(mContext, tag + (msg == null ? "" : msg), Toast.LENGTH_LONG).show();
+					}
+				});
+
 			}
 		});
 	}

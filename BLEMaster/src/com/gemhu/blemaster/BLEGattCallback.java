@@ -124,11 +124,11 @@ public class BLEGattCallback extends BluetoothGattCallback {
             // For all other profiles, writes the data formatted in HEX.
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
-                final StringBuilder stringBuilder = new StringBuilder(data.length);
-                for(byte byteChar : data)
-                    stringBuilder.append(String.format("%02X ", byteChar));
-                String info = new String(data) + "\n" + stringBuilder.toString();
-                intent.putExtra(EXTRA_DATA, info);
+//                final StringBuilder stringBuilder = new StringBuilder(data.length);
+//                for(byte byteChar : data)
+//                    stringBuilder.append(String.format("%02X ", byteChar));
+//                String info = new String(data) + "\n" + stringBuilder.toString();
+                intent.putExtra(EXTRA_DATA, data);
                 // Log.i(TAG, CharacterOperaterActivity.bytesToHexString(data));
                 // log.info(CharacterOperaterActivity.bytesToHexString(data));
 //                if (CharacterOperaterActivity.ResponseCheckUtils != null) {
