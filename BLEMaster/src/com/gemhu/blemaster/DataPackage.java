@@ -143,10 +143,6 @@ public class DataPackage {
 		this.mData[5] = this.getCheckCode();
 	}
 	
-	public boolean isCheckOK(byte code) {
-		return code == this.getCheckCode();
-	}
-	
 	public boolean isCheckedOk() {
 		return this.mData[5] == this.getCheckCode();
 	}
