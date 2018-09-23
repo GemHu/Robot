@@ -1,6 +1,7 @@
 package com.gemhu.blemaster;
 
-import com.gemhu.blemaster.BLEGattCallback.OnResponseListener;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -10,7 +11,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -20,20 +24,78 @@ import android.widget.Toast;
  *
  */
 public class RobotManager {
+	private final static String TAG = RobotManager.class.getSimpleName();
 
 	private BLEService mService;
 	private BluetoothGattCharacteristic mCharacteristic;
 	private OnConnectChangedListener mChangedListener;
 	private OnDataChangedListener mOnDataChangedListener;
 
+	/**
+	 * 命令消息队列；消息的发送机处理需要一段时间， 为避免连续发送的时候出现发送失败的问题，需要等到上一条消息处理完毕后，在发送吓一跳消息；
+	 */
+	private BlockingDeque<Worker> mCmdQueue;
+	/**
+	 * 当前正在处理的命令；
+	 */
+	private Worker mcurrWorker;
+	private int mSendCount = 0;
+	private OnWriteListener mWriteListener = new OnWriteListener() {
+
+		@Override
+		public void onWriteSuccess(final BluetoothGattCharacteristic characteristic) {
+			Log.i(TAG, "Data write success: " + Utils.bytesToHexString(characteristic.getValue()));
+
+			if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
+				mContext.runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						if (mcurrWorker != null)
+							mcurrWorker.getWriteListener().onWriteSuccess(characteristic);
+					}
+				});
+		}
+
+		@Override
+		public void onResponse(final BluetoothGattCharacteristic characteristic) {
+			Log.i(TAG, "Data receive success: " + Utils.bytesToHexString(characteristic.getValue()));
+			if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
+				mContext.runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						if (mcurrWorker != null)
+							mcurrWorker.getWriteListener().onResponse(characteristic);
+					}
+				});
+		}
+
+		@Override
+		public void onFailure(final int code) {
+			Log.i(TAG, "Data write failed: " + code);
+			if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
+				mContext.runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						if (mcurrWorker != null)
+							mcurrWorker.getWriteListener().onFailure(code);
+					}
+				});
+		}
+	};
+
+	private Handler mHandler = new Handler(Looper.getMainLooper());
+
 	interface OnConnectChangedListener {
 		void OnStateChanged(boolean connected);
 	}
-	
-	interface OnDataChangedListener{
-		
-		void onSpeedChanged(int speed);
-		
+
+	interface OnDataChangedListener {
+
+		void onSpeedChanged(float speed);
+
 		void onPosChanged(float pos, int axis);
 	}
 
@@ -57,9 +119,9 @@ public class RobotManager {
 					mChangedListener.OnStateChanged(false);
 			} else if (BLEGattCallback.ACTION_DATA_AVAILABLE.equals(action)) {
 				// 接收到消息
-				byte[] data = intent.getByteArrayExtra(BLEGattCallback.EXTRA_DATA);
-				if (data != null)
-					RobotManager.this.onReceiveData(data);
+				// byte[] data = intent.getByteArrayExtra(BLEGattCallback.EXTRA_DATA);
+				// if (data != null)
+				// RobotManager.this.onReceiveData(data);
 			} else if (BLEGattCallback.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
 				// Show all the supported services and characteristics on the user interface.
 				// displayGattServices(mBleService.getSupportedGattServices());
@@ -72,19 +134,21 @@ public class RobotManager {
 					return;
 				}
 				// 更新蓝牙连接状态；
-				
+				mService.setOnWriteListener(mWriteListener);
+
 				if (mChangedListener != null) {
 					mChangedListener.OnStateChanged(true);
 				}
 				// 订阅特征值，用于接收信息
-				if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0)
-					return;
-				BluetoothGattDescriptor descriptor = mCharacteristic.getDescriptor(BLEUUID.CONFIG);
-				if (descriptor == null)
-					return;
-				descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-				mService.mBluetoothGatt.writeDescriptor(descriptor);
-				mService.mBluetoothGatt.setCharacteristicNotification(mCharacteristic, true);
+				mService.setCharacteristicNotification(mCharacteristic, true);
+//				if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0)
+//					return;
+//				BluetoothGattDescriptor descriptor = mCharacteristic.getDescriptor(BLEUUID.CONFIG);
+//				if (descriptor == null)
+//					return;
+//				descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+//				mService.mBluetoothGatt.writeDescriptor(descriptor);
+//				mService.mBluetoothGatt.setCharacteristicNotification(mCharacteristic, true);
 			}
 		}
 	};
@@ -133,9 +197,9 @@ public class RobotManager {
 	public void setOnConnectChangedListener(OnConnectChangedListener listener) {
 		this.mChangedListener = listener;
 	}
-	
+
 	public void setOnDataChangedListener(OnDataChangedListener listener) {
-		this.mOnDataChangedListener  = listener;
+		this.mOnDataChangedListener = listener;
 	}
 
 	private BluetoothGattCharacteristic getCharacteristic() {
@@ -155,34 +219,33 @@ public class RobotManager {
 
 	// -----------------------------------------------//
 	// 接收到底层发过来的数据，或者读取到的数据；
-	//------------------------------------------------//
-	private void onReceiveData(byte[] data) {
-		String msg = Utils.bytesToHexString(data);
+	// ------------------------------------------------//
+	private void onReceiveData(DataPackage repo) {
+		if (repo == null)
+			return;
+
+		String msg = repo.getKey();
 		Toast.makeText(mContext, msg, Toast.LENGTH_LONG).show();
 
-		DataPackage pkg = DataPackage.create(data);
-		if(pkg == null)
-			return;
-		
-		if (!pkg.isCheckedOk()) {
+		if (!repo.isCheckedOk()) {
 			Toast.makeText(mContext, "数据校验错误", Toast.LENGTH_LONG).show();
 			return;
 		}
 		//
 		if (this.mOnDataChangedListener == null)
 			return;
-		
-		if (pkg.isUpload()) {
-			if (pkg.isGetSpeed()) {
+
+		if (repo.isUpload()) {
+			if (repo.isGetSpeed()) {
 				// 更新速度信息；
-				this.mOnDataChangedListener.onSpeedChanged(pkg.getSpeed());
-			} else if (pkg.isGetPos()) {
+				this.mOnDataChangedListener.onSpeedChanged(repo.getSpeed());
+			} else if (repo.isGetPos()) {
 				// 更新位置信息；
-				this.mOnDataChangedListener.onPosChanged(pkg.getPos(), pkg.getAxis());
+				this.mOnDataChangedListener.onPosChanged(repo.getPos(), repo.getAxis());
 			}
 		}
 	}
-	
+
 	// ------------------------------------------------//
 	// --------------- 执行操作命令 -----------------------//
 	// ------------------------------------------------//
@@ -337,6 +400,10 @@ public class RobotManager {
 	}
 
 	private boolean executeCmd(DataPackage data) {
+		// 1、发送消息；
+		// 2、n*100毫秒后，查看相应信息（notifycation）
+		// 3、如果接收到相应，并且验证成功，则表示一条消息处理成功，开始处理吓一跳消息；
+		// 4、如果仍为接收到设备反馈的消息，则可能出现丢包现象，重新发送？？？
 		if (data == null || this.mCharacteristic == null || this.mService == null)
 			return false;
 		int property = this.mCharacteristic.getProperties();
@@ -346,25 +413,106 @@ public class RobotManager {
 			return false;
 		}
 
-		data.setCharecteristic(this.mCharacteristic);
-		this.mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-		return this.mService.writeCharacteristic(this.mCharacteristic, new OnResponseListener() {
+		if (this.mCmdQueue == null)
+			this.mCmdQueue = new LinkedBlockingDeque<Worker>();
+
+		this.mCmdQueue.add(new Worker(data));
+		this.processNextCmd();
+		return true;
+	}
+
+	/**
+	 * 处理吓一跳命令；
+	 */
+	private void processNextCmd() {
+		if (this.mcurrWorker == null) {
+			mcurrWorker = this.mCmdQueue.poll();
+			if (mcurrWorker != null) {
+				sendData(mcurrWorker);
+				return;
+			}
+		}
+		// 一段时间后在处理吓一跳命令；
+		processNextCmdDelay();
+	}
+
+	private void processNextCmdDelay() {
+		this.mHandler.postDelayed(new Runnable() {
 
 			@Override
-			public void onResponse(int stage, BluetoothGattCharacteristic characteristic) {
+			public void run() {
+				processNextCmd();
+			}
+		}, 500);
+	}
 
-				final String tag = stage == 0 ? "OnRead:" : (stage == 1 ? "OnWrite:" : "OnChanged:");
-				final String msg = Utils.bytesToHexString(characteristic.getValue());
+	private void sendData(Worker worker) {
+		if (worker == null)
+			return;
 
-				mContext.runOnUiThread(new Runnable() {
+		DataPackage data = worker.getDataPackage();
+		data.setCharecteristic(mCharacteristic);
+		Log.i(TAG, "Start to write data : " + data.getKey());
+		worker.setTimeoutListener(new Worker.OnTimeOutListener() {
 
-					@Override
-					public void run() {
-						Toast.makeText(mContext, tag + (msg == null ? "" : msg), Toast.LENGTH_LONG).show();
-					}
-				});
+			@Override
+			public void onTimeOut() {
+				if (mSendCount >= 2) {
+					mSendCount = 0;
+					Toast.makeText(mContext, "未检测到反馈消息", Toast.LENGTH_LONG).show();
+					mcurrWorker = null;
+				} else {
+					mSendCount++;
+					sendData(mcurrWorker);
+				}
+			}
+		}, 2 * 1000);
+		worker.setWriteListener(new OnWriteListener() {
+
+			@Override
+			public void onWriteSuccess(BluetoothGattCharacteristic characteristic) {
+				// TODO Auto-generated method stub
 
 			}
+
+			@Override
+			public void onResponse(BluetoothGattCharacteristic characteristic) {
+				mcurrWorker.onResponse();
+				DataPackage repo = DataPackage.create(characteristic.getValue());
+				if (!repo.isUpload()) {
+					if (repo.isReponseNormal()) {
+						// 验证成功
+						// 如果之前的命令是移动过移动命令，则接下来需要发送获取位置命令，实时更新当前位置
+						if (repo.getCmd() == DataPackage.Command.StartMove) {
+							executeGetPosition(repo.getAxis());
+						}
+					} else {
+						// 验证失败
+					}
+				} else {
+					onReceiveData(repo);
+				}
+
+				// 消息验证
+				mcurrWorker = null;
+				// 执行下一条命令
+				processNextCmd();
+			}
+
+			@Override
+			public void onFailure(int code) {
+				Log.i(TAG, "数据写入失败！");
+				// if (mSendCount >= 3) {
+				// Toast.makeText(mContext, "连接中断", Toast.LENGTH_LONG).show();
+				// mcurrWorker = null;
+				// } else {
+				// mSendCount++;
+				// sendData(mcurrWorker);
+				// }
+			}
 		});
+		if (!this.mService.writeCharacteristic(this.mCharacteristic)) {
+			Log.i(TAG, "数据写入失败");
+		}
 	}
 }

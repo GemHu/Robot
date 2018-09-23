@@ -148,17 +148,31 @@ public class DataPackage {
 	}
 	
 	public void setCharecteristic(BluetoothGattCharacteristic characteristic) {
+		if (characteristic == null)
+			return;
+		
 		this.setCheckCode();
-		characteristic.setValue(this.mData);
+		byte[] data = new byte[this.mData.length];
+		System.arraycopy(this.mData, 0, data, 0, this.mData.length);
+		
+		characteristic.setValue(data);
 	}
 	
-	public int getSpeed() {
-		int speed = this.mData[3] << 8 + this.mData[4];
-		return (int) (speed * 0.1);
+	public float getSpeed() {
+		int speed = ((this.mData[3] & 0xFF) << 8 | (this.mData[4] & 0xFF));
+		return speed * 0.1f;
 	}
 	
 	public float getPos() {
-		int pos = this.mData[3] << 8 + this.mData[4];
+		int pos = ((this.mData[3] & 0xFF) << 8 | (this.mData[4] & 0xFF));
 		return pos * 0.1f;
+	}
+	
+	public String getKey() {
+		return Utils.bytesToHexString(this.mData);
+	}
+	
+	public boolean isReponseNormal() {
+		return this.mData[4] == 0x00;
 	}
 }

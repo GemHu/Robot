@@ -9,6 +9,7 @@ import com.hu.robot.tools.LoopValueTools;
 import com.hu.robot.tools.ResponseCheckUtils;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
@@ -160,7 +161,8 @@ public class CharacterOperaterActivity extends Activity implements OnClickListen
 		}
 
 		int propertis = this.mGattCharacteristic.getProperties();
-		if ((propertis & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0) {
+		if ((propertis & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0 ||
+				(propertis & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0) {
 			this.mWriteLayout.setVisibility(View.VISIBLE);
 			this.mNotifyLayout.setVisibility(View.GONE);
 

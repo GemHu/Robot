@@ -118,6 +118,13 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		super.onPause();
 		this.mRobotManager.onPause();
 	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		
+		unbindService(mServiceConnection);
+	}
 
 	private void initView() {
 		this.findViewById(R.id.ble_group).setOnClickListener(this);
@@ -178,7 +185,7 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		this.mRobotManager.setOnDataChangedListener(new OnDataChangedListener() {
 			
 			@Override
-			public void onSpeedChanged(int speed) {
+			public void onSpeedChanged(float speed) {
 				mtxtRunSpeed.setText(speed + "RPM");
 			}
 			
