@@ -5,7 +5,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -224,9 +223,6 @@ public class RobotManager {
 		if (repo == null)
 			return;
 
-		String msg = repo.getKey();
-		Toast.makeText(mContext, msg, Toast.LENGTH_LONG).show();
-
 		if (!repo.isCheckedOk()) {
 			Toast.makeText(mContext, "数据校验错误", Toast.LENGTH_LONG).show();
 			return;
@@ -244,6 +240,24 @@ public class RobotManager {
 				this.mOnDataChangedListener.onPosChanged(repo.getPos(), repo.getAxis());
 			}
 		}
+	}
+	
+	private boolean isDeviceMoving;
+	/**
+	 * 当设备移动的过程中，需要定时更新当前位置；
+	 */
+	private void updatePositionInfo(final int axis, final long delay) {
+		mHandler.postDelayed(new Runnable() {
+			
+			@Override
+			public void run() {
+				if (isDeviceMoving) {
+					// 执行命令，获取当前位置信息
+					executeGetPosition(axis);
+					updatePositionInfo(axis, delay);
+				}
+			}
+		}, delay);	// 一定时间间隔后刷新一次位置信息;
 	}
 
 	// ------------------------------------------------//
@@ -276,7 +290,12 @@ public class RobotManager {
 		DataPackage data = DataPackage.getDataOfSetSpeed();
 		data.setData(DataPackage.ZERO, (byte) speed);
 
-		return this.executeCmd(data);
+		if (!this.executeCmd(data))
+			return false;
+		
+		// 修改运行速度后，需要同步的获取当前速度
+		executeGetSpeed();
+		return true;
 	}
 
 	/**
@@ -323,14 +342,20 @@ public class RobotManager {
 	 * @param forward
 	 * @return
 	 */
-	public boolean executeStartMove(int axis, boolean forward) {
+	public boolean executeStartMove(int axis, boolean reverse) {
 		byte high = 0x00;
-		byte low = forward ? DataPackage.MOVING_DIRECT : DataPackage.MOVING_REVERSE;
+		byte low = reverse ? DataPackage.MOVING_REVERSE : DataPackage.MOVING_DIRECT;
 		DataPackage data = DataPackage.getDataOfStartMove();
 		data.setAxis((byte) axis);
 		data.setData(high, low);
 
-		return this.executeCmd(data);
+		if (!this.executeCmd(data))
+			return false;
+		
+		// 500毫秒后，刷新位置信息；
+		isDeviceMoving = true;
+		updatePositionInfo(axis, 500);
+		return true;
 	}
 
 	/**
@@ -339,10 +364,16 @@ public class RobotManager {
 	 * @return
 	 */
 	public boolean executeStopMove(int axis) {
+		isDeviceMoving = false;
 		DataPackage data = DataPackage.getDataOfStopMove();
 		data.setAxis((byte) axis);
 
-		return this.executeCmd(data);
+		if (!this.executeCmd(data))
+			return false;
+		
+		// 停止前事实刷新下当前速度
+		executeGetPosition(axis);
+		return true;
 	}
 
 	/**
@@ -392,9 +423,9 @@ public class RobotManager {
 	 * @param axis
 	 * @return
 	 */
-	public boolean executeGetPosition(byte axis) {
+	public boolean executeGetPosition(int axis) {
 		DataPackage data = DataPackage.getDataOfGetPos();
-		data.setAxis(axis);
+		data.setAxis((byte)axis);
 
 		return this.executeCmd(data);
 	}
@@ -416,7 +447,7 @@ public class RobotManager {
 		if (this.mCmdQueue == null)
 			this.mCmdQueue = new LinkedBlockingDeque<Worker>();
 
-		this.mCmdQueue.add(new Worker(data));
+		this.mCmdQueue.add(new Worker(data, mCharacteristic));
 		this.processNextCmd();
 		return true;
 	}
@@ -443,30 +474,28 @@ public class RobotManager {
 			public void run() {
 				processNextCmd();
 			}
-		}, 500);
+		}, 200);
 	}
 
-	private void sendData(Worker worker) {
+	private void sendData(final Worker worker) {
 		if (worker == null)
 			return;
 
-		DataPackage data = worker.getDataPackage();
-		data.setCharecteristic(mCharacteristic);
-		Log.i(TAG, "Start to write data : " + data.getKey());
 		worker.setTimeoutListener(new Worker.OnTimeOutListener() {
 
 			@Override
 			public void onTimeOut() {
+				Log.w(TAG, String.format("命令%s响应超时！", worker.getPackage().getKey()));
 				if (mSendCount >= 2) {
 					mSendCount = 0;
-					Toast.makeText(mContext, "未检测到反馈消息", Toast.LENGTH_LONG).show();
+					Toast.makeText(mContext, "消息响应超时", Toast.LENGTH_LONG).show();
 					mcurrWorker = null;
 				} else {
 					mSendCount++;
 					sendData(mcurrWorker);
 				}
 			}
-		}, 2 * 1000);
+		});
 		worker.setWriteListener(new OnWriteListener() {
 
 			@Override
@@ -482,37 +511,36 @@ public class RobotManager {
 				if (!repo.isUpload()) {
 					if (repo.isReponseNormal()) {
 						// 验证成功
-						// 如果之前的命令是移动过移动命令，则接下来需要发送获取位置命令，实时更新当前位置
-						if (repo.getCmd() == DataPackage.Command.StartMove) {
-							executeGetPosition(repo.getAxis());
-						}
+						mcurrWorker = null;
+						// 执行下一条命令
+						processNextCmd();
 					} else {
 						// 验证失败
+						Log.w(TAG, String.format("命令%s响应校验失败！", worker.getPackage().getKey()));
+						if (mSendCount >= 2) {
+							mSendCount = 0;
+							Toast.makeText(mContext, "命令响应验证失败，连接可能已中断", Toast.LENGTH_LONG).show();
+							mcurrWorker = null;
+						} else {
+							mSendCount++;
+							sendData(mcurrWorker);
+						}
 					}
 				} else {
 					onReceiveData(repo);
+					mcurrWorker = null;
+					// 执行下一条命令
+					processNextCmd();
 				}
-
-				// 消息验证
-				mcurrWorker = null;
-				// 执行下一条命令
-				processNextCmd();
 			}
 
 			@Override
 			public void onFailure(int code) {
 				Log.i(TAG, "数据写入失败！");
-				// if (mSendCount >= 3) {
-				// Toast.makeText(mContext, "连接中断", Toast.LENGTH_LONG).show();
-				// mcurrWorker = null;
-				// } else {
-				// mSendCount++;
-				// sendData(mcurrWorker);
-				// }
 			}
 		});
-		if (!this.mService.writeCharacteristic(this.mCharacteristic)) {
-			Log.i(TAG, "数据写入失败");
+		if (!worker.sendData(this.mService)) {
+			Toast.makeText(mContext, "数据发送失败！", Toast.LENGTH_LONG).show();
 		}
 	}
 }

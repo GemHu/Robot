@@ -19,8 +19,10 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -29,7 +31,7 @@ import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
 @SuppressLint("InflateParams")
-public class MainActivity extends Activity implements OnClickListener, OnEditorActionListener {
+public class MainActivity extends Activity implements OnClickListener, OnEditorActionListener, OnTouchListener {
 
 	private static final int REQUEST_ENABLE_BT = 0x01;
 	private final static String TAG = MainActivity.class.getSimpleName();
@@ -55,7 +57,7 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 			R.id.txt_pos_max5, //
 			R.id.txt_pos_max6 //
 	};
-	private int[] btnIds = { //
+	private int[] moveIds = { //
 			R.id.btn_move_add1, //
 			R.id.btn_move_add2, //
 			R.id.btn_move_add3, //
@@ -67,7 +69,9 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 			R.id.btn_move_sub3, //
 			R.id.btn_move_sub4, //
 			R.id.btn_move_sub5, //
-			R.id.btn_move_sub6, //
+			R.id.btn_move_sub6 //
+	};
+	private int[] traceIds = { //
 			R.id.btn_trace1, //
 			R.id.btn_trace2, //
 			R.id.btn_trace3, //
@@ -143,8 +147,12 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		for (int id : limitIds) {
 			((EditText) findViewById(id)).setOnEditorActionListener(this);
 		}
+		// 设置相关按键的触摸事件；
+		for (int id : moveIds) {
+			findViewById(id).setOnTouchListener(this);
+		}
 		// 设置相关按键点击事件；
-		for (int id : btnIds) {
+		for (int id : traceIds) {
 			findViewById(id).setOnClickListener(this);
 		}
 	}
@@ -206,7 +214,16 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 					currView = (TextView) findViewById(R.id.txt_pos_curr6);
 				
 				if (currView != null)
-					currView.setText((pos > 0 ? "+" : "") + "°"); 
+				{
+					String value = "";
+					if (pos > 0)
+						value = ("+" + pos);
+					else if (pos < 0)
+						value = (pos + "");
+					else 
+						value = "0.0";
+					currView.setText(value + "°"); 
+				}
 			}
 		});
 		//
@@ -245,41 +262,6 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		case R.id.main_logo:
 			// 连续点击5次，切换运行模式；
 			this.changeRunningMode();
-		case R.id.btn_move_add1:
-			this.mRobotManager.executeStartMove(1, true);
-			break;
-		case R.id.btn_move_add2:
-			this.mRobotManager.executeStartMove(2, true);
-			break;
-		case R.id.btn_move_add3:
-			this.mRobotManager.executeStartMove(3, true);
-			break;
-		case R.id.btn_move_add4:
-			this.mRobotManager.executeStartMove(4, true);
-			break;
-		case R.id.btn_move_add5:
-			this.mRobotManager.executeStartMove(5, true);
-			break;
-		case R.id.btn_move_add6:
-			this.mRobotManager.executeStartMove(6, true);
-			break;
-		case R.id.btn_move_sub1:
-			this.mRobotManager.executeStartMove(1, false);
-			break;
-		case R.id.btn_move_sub2:
-			this.mRobotManager.executeStartMove(2, false);
-			break;
-		case R.id.btn_move_sub3:
-			this.mRobotManager.executeStartMove(3, false);
-			break;
-		case R.id.btn_move_sub4:
-			this.mRobotManager.executeStartMove(4, false);
-			break;
-		case R.id.btn_move_sub5:
-			this.mRobotManager.executeStartMove(5, false);
-			break;
-		case R.id.btn_move_sub6:
-			this.mRobotManager.executeStartMove(6, false);
 			break;
 		case R.id.btn_trace1:
 			this.mRobotManager.executeTraceRunning(1);
@@ -299,6 +281,53 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
+	@Override
+	public boolean onTouch(View v, MotionEvent event) {
+		switch (v.getId()) {
+		case R.id.btn_move_add1:
+			onMoveStatusChanged(event.getAction(), 1, false);
+			break;
+		case R.id.btn_move_add2:
+			onMoveStatusChanged(event.getAction(), 2, false);
+			break;
+		case R.id.btn_move_add3:
+			onMoveStatusChanged(event.getAction(), 3, false);
+			break;
+		case R.id.btn_move_add4:
+			onMoveStatusChanged(event.getAction(), 4, false);
+			break;
+		case R.id.btn_move_add5:
+			onMoveStatusChanged(event.getAction(), 5, false);
+			break;
+		case R.id.btn_move_add6:
+			onMoveStatusChanged(event.getAction(), 6, false);
+			break;
+		case R.id.btn_move_sub1:
+			onMoveStatusChanged(event.getAction(), 1, true);
+			break;
+		case R.id.btn_move_sub2:
+			onMoveStatusChanged(event.getAction(), 2, true);
+			break;
+		case R.id.btn_move_sub3:
+			onMoveStatusChanged(event.getAction(), 3, true);
+			break;
+		case R.id.btn_move_sub4:
+			onMoveStatusChanged(event.getAction(), 4, true);
+			break;
+		case R.id.btn_move_sub5:
+			onMoveStatusChanged(event.getAction(), 5, true);
+			break;
+		case R.id.btn_move_sub6:
+			onMoveStatusChanged(event.getAction(), 6, true);
+			break;
+		default:
+			break;
+		}
+		
+		return false;
+	}
+	
 	@Override
 	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
 		int id = v.getId();
@@ -440,5 +469,12 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		} else {
 			sBar.setEnabled(true);
 		}
+	}
+	
+	private void onMoveStatusChanged(int action, int axis, boolean reverse) {
+		if (action == MotionEvent.ACTION_DOWN)
+			this.mRobotManager.executeStartMove(axis, reverse);
+		else if (action == MotionEvent.ACTION_UP)
+			this.mRobotManager.executeStopMove(axis);
 	}
 }
