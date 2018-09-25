@@ -159,12 +159,12 @@ public class DataPackage {
 	}
 	
 	public float getSpeed() {
-		int speed = ((this.mData[3] & 0xFF) << 8 | (this.mData[4] & 0xFF));
+		short speed = (short) ((this.mData[3] & 0xFF) << 8 | (this.mData[4] & 0xFF));
 		return speed * 0.1f;
 	}
 	
 	public float getPos() {
-		int pos = ((this.mData[3] & 0xFF) << 8 | (this.mData[4] & 0xFF));
+		short pos = (short) ((this.mData[3] & 0xFF) << 8 | (this.mData[4] & 0xFF));
 		return pos * 0.1f;
 	}
 	

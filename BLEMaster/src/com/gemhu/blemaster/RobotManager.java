@@ -327,7 +327,7 @@ public class RobotManager {
 		int iValue = (int) (maxValue * 10);
 		byte high = (byte) (iValue >> 8 & 0xFF);
 		byte low = (byte) (iValue & 0xFF);
-		DataPackage data = DataPackage.getDataOfSetMinLimit();
+		DataPackage data = DataPackage.getDataOfSetMaxLimit();
 		data.setAxis((byte) axis);
 		data.setData(high, low);
 
