@@ -58,7 +58,9 @@ public class RobotManager {
 
 		@Override
 		public void onResponse(final BluetoothGattCharacteristic characteristic) {
-			Log.i(TAG, "Data receive success: " + Utils.bytesToHexString(characteristic.getValue()));
+			String cmd = Utils.bytesToHexString(characteristic.getValue());
+			Log.i(TAG, "Data receive success: " + cmd);
+			Toast.makeText(mContext, "接受到的命令：" + cmd, Toast.LENGTH_LONG).show();
 			if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
 				mContext.runOnUiThread(new Runnable() {
 
@@ -306,7 +308,7 @@ public class RobotManager {
 	 * @return
 	 */
 	public boolean executeSetMinPosition(int axis, float minValue) {
-		int iValue = (int) (minValue * 10);
+		short iValue = (short) (minValue * 10);
 		byte high = (byte) (iValue >> 8 & 0xFF);
 		byte low = (byte) (iValue & 0xFF);
 		DataPackage data = DataPackage.getDataOfSetMinLimit();
