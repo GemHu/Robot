@@ -84,7 +84,7 @@ public class BLEGattCallback extends BluetoothGattCallback {
                                         BluetoothGattCharacteristic characteristic) {
         broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         if (this.mWriteListener != null)
-        	this.mWriteListener.onResponse(characteristic);
+        	this.mWriteListener.onResponse(characteristic.getValue());
     }
     
     /**
@@ -98,7 +98,7 @@ public class BLEGattCallback extends BluetoothGattCallback {
 //    		Log.i(TAG, "Write Faild!");
         if (this.mWriteListener != null) {
         	if (status == BluetoothGatt.GATT_SUCCESS)
-            	this.mWriteListener.onWriteSuccess(characteristic);
+            	this.mWriteListener.onWriteSuccess(characteristic.getValue());
         	else 
         		this.mWriteListener.onFailure(status);
         }

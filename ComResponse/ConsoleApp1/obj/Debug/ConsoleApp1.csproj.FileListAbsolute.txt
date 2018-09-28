@@ -5,3 +5,10 @@ C:\Users\hdx_h\source\repos\ComMessageResponse\ConsoleApp1\obj\Debug\ConsoleApp1
 C:\Users\hdx_h\source\repos\ComMessageResponse\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.CoreCompileInputs.cache
 C:\Users\hdx_h\source\repos\ComMessageResponse\ConsoleApp1\obj\Debug\ConsoleApp1.exe
 C:\Users\hdx_h\source\repos\ComMessageResponse\ConsoleApp1\obj\Debug\ConsoleApp1.pdb
+D:\Code\Android\Robot\ComResponse\ConsoleApp1\bin\Debug\ConsoleApp1.exe.config
+D:\Code\Android\Robot\ComResponse\ConsoleApp1\bin\Debug\ConsoleApp1.exe
+D:\Code\Android\Robot\ComResponse\ConsoleApp1\bin\Debug\ConsoleApp1.pdb
+D:\Code\Android\Robot\ComResponse\ConsoleApp1\obj\Debug\ConsoleApp1.csprojResolveAssemblyReference.cache
+D:\Code\Android\Robot\ComResponse\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.CoreCompileInputs.cache
+D:\Code\Android\Robot\ComResponse\ConsoleApp1\obj\Debug\ConsoleApp1.exe
+D:\Code\Android\Robot\ComResponse\ConsoleApp1\obj\Debug\ConsoleApp1.pdb

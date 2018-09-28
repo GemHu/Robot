@@ -51,6 +51,9 @@ namespace ConsoleApp1
             Thread recvThread = new Thread(receivedata);
             recvThread.Start();
 
+            Thread updateThread = new Thread(updateInfo);
+            updateThread.Start();
+
             while (true)
             {
                 Thread.Sleep(1000);
@@ -96,6 +99,7 @@ namespace ConsoleApp1
             try
             {
                 device.Open();
+                isDeviceOpening = true;
                 Console.WriteLine("串口已打开！");
                 return true;
             }
@@ -107,7 +111,55 @@ namespace ConsoleApp1
                 return false;
             }
         }
+
+        public static void updateInfo()
+        {
+            while (true)
+            {
+                updateSpeed();
+                updatePosition();
+                // 1秒中更新一次；
+                Thread.Sleep(2 * 1000);
+            }
+        }
+
+        private static bool isDeviceOpening;
+        public static void updateSpeed()
+        {
+            if (isDeviceOpening)
+            {
+                byte[] data = new byte[6];
+                data[0] = 0x55;
+                data[1] = 0x09;
+                getSpeed(data);
+                data[5] = getCheckCode(data);
+                write(data);
+
+                string str = bytes2HexString(data);
+                Console.WriteLine("==========================");
+                Console.WriteLine("更新速度:{0}", str);
+            }
+        }
+
+        public static void updatePosition()
+        {
+            if (isMoving)
+            {
+                byte[] data = new byte[6];
+                data[0] = 0x55;
+                data[1] = 0x1a;
+                data[2] = axis;
+                getPos(data);
+                data[5] = getCheckCode(data);
+                write(data);
+
+                string str = bytes2HexString(data);
+                Console.WriteLine("==========================");
+                Console.WriteLine("更新位置:{0}", str);
+            }
+        }
         
+        static bool isError;
         private static void receivedata()
         {
             int size = 6;
@@ -137,6 +189,9 @@ namespace ConsoleApp1
                     rec = new byte[size];
                     currCount = 0;
                 }
+                // 如果第一個byte不是0xAA，則數據錯誤
+                // 需要丟棄AA之前的字符
+                isError = true;
             }
         }
 
@@ -203,18 +258,18 @@ namespace ConsoleApp1
             } else if (datas[0] == 0x55)
             {
                 // 上传命令
-                if (datas[1] == 0x09)
-                {
-                    Console.WriteLine("获取速度");
-                    getSpeed(datas);
-                }
-                else if (datas[1] == 0x0A)
-                {
-                    Console.WriteLine("获取位置");
-                    getPos(datas);
-                }
-                datas[5] = getCheckCode(datas);
-                write(datas);
+                //if (datas[1] == 0x09)
+                //{
+                //    Console.WriteLine("获取速度");
+                //    getSpeed(datas);
+                //}
+                //else if (datas[1] == 0x0A)
+                //{
+                //    Console.WriteLine("获取位置");
+                //    getPos(datas);
+                //}
+                //datas[5] = getCheckCode(datas);
+                //write(datas);
             }
         }
 
@@ -359,6 +414,7 @@ namespace ConsoleApp1
         static void startMove(byte[] data)
         {
             isMoving = true;
+            axis = data[2];
             reverseDirection = data[4] == 0x02;
         }
 
@@ -369,6 +425,7 @@ namespace ConsoleApp1
         
         static bool isMoving;
         static bool reverseDirection;
+        static byte axis;
 
         static void move(int axis, int offset)
         {

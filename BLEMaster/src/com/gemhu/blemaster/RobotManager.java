@@ -41,51 +41,71 @@ public class RobotManager {
 	 */
 	private Worker mcurrWorker;
 	private int mSendCount = 0;
+	private static Toast mToast;
+	
+	private void toast(String text) {
+		if (mToast == null && mContext == null)
+			return;
+		
+		if (mToast != null)
+			mToast.cancel();
+		
+		mToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
+		mToast.show();
+	}
+	
 	private OnWriteListener mWriteListener = new OnWriteListener() {
 
 		@Override
-		public void onWriteSuccess(final BluetoothGattCharacteristic characteristic) {
-			Log.i(TAG, "Data write success: " + Utils.bytesToHexString(characteristic.getValue()));
+		public void onWriteSuccess(final byte[] value) {
+			Log.i(TAG, "Data write success: " + Utils.bytesToHexString(value));
 
-			if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
-				mContext.runOnUiThread(new Runnable() {
+			mContext.runOnUiThread(new Runnable() {
 
-					@Override
-					public void run() {
-						if (mcurrWorker != null)
-							mcurrWorker.getWriteListener().onWriteSuccess(characteristic);
-					}
-				});
+				@Override
+				public void run() {
+					if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
+						mcurrWorker.getWriteListener().onWriteSuccess(value);
+				}
+			});
 		}
 
 		@Override
-		public void onResponse(final BluetoothGattCharacteristic characteristic) {
-			String cmd = Utils.bytesToHexString(characteristic.getValue());
-			Log.i(TAG, "Data receive success: " + cmd);
-			Toast.makeText(mContext, "接受到的命令：" + cmd, Toast.LENGTH_LONG).show();
-			if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
-				mContext.runOnUiThread(new Runnable() {
+		public void onResponse(final byte[] value) {
+			final DataPackage pkg = DataPackage.create(value);
+			if (pkg == null) {
+				Log.e(TAG, "Data receive error: " + Utils.bytesToHexString(value));
+			} else {
+				Log.i(TAG, "Data receive success: " + pkg.getKey());
+			}
+			mContext.runOnUiThread(new Runnable() {
 
-					@Override
-					public void run() {
-						if (mcurrWorker != null)
-							mcurrWorker.getWriteListener().onResponse(characteristic);
+				@Override
+				public void run() {
+					if (pkg == null)
+						return;
+					
+					toast("接受到的命令：" + pkg.getKey());
+					if (pkg.isGetSpeed() || pkg.isGetPos()) {
+						onReceiveData(pkg);
+					} else if (mcurrWorker != null && mcurrWorker.getWriteListener() != null) {
+						mcurrWorker.getWriteListener().onResponse(value);
 					}
-				});
+				}
+			});
 		}
 
 		@Override
 		public void onFailure(final int code) {
 			Log.i(TAG, "Data write failed: " + code);
-			if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
-				mContext.runOnUiThread(new Runnable() {
+			mContext.runOnUiThread(new Runnable() {
 
-					@Override
-					public void run() {
-						if (mcurrWorker != null)
-							mcurrWorker.getWriteListener().onFailure(code);
-					}
-				});
+				@Override
+				public void run() {
+					if (mcurrWorker != null && mcurrWorker.getWriteListener() != null)
+						mcurrWorker.getWriteListener().onFailure(code);
+				}
+			});
 		}
 	};
 
@@ -144,14 +164,16 @@ public class RobotManager {
 				}
 				// 订阅特征值，用于接收信息
 				mService.setCharacteristicNotification(mCharacteristic, true);
-//				if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0)
-//					return;
-//				BluetoothGattDescriptor descriptor = mCharacteristic.getDescriptor(BLEUUID.CONFIG);
-//				if (descriptor == null)
-//					return;
-//				descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-//				mService.mBluetoothGatt.writeDescriptor(descriptor);
-//				mService.mBluetoothGatt.setCharacteristicNotification(mCharacteristic, true);
+				// if ((mCharacteristic.getProperties() &
+				// BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0)
+				// return;
+				// BluetoothGattDescriptor descriptor =
+				// mCharacteristic.getDescriptor(BLEUUID.CONFIG);
+				// if (descriptor == null)
+				// return;
+				// descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+				// mService.mBluetoothGatt.writeDescriptor(descriptor);
+				// mService.mBluetoothGatt.setCharacteristicNotification(mCharacteristic, true);
 			}
 		}
 	};
@@ -245,24 +267,25 @@ public class RobotManager {
 			}
 		}
 	}
-	
-	private boolean isDeviceMoving;
-	/**
-	 * 当设备移动的过程中，需要定时更新当前位置；
-	 */
-	private void updatePositionInfo(final int axis, final long delay) {
-		mHandler.postDelayed(new Runnable() {
-			
-			@Override
-			public void run() {
-				if (isDeviceMoving) {
-					// 执行命令，获取当前位置信息
-					executeGetPosition(axis);
-					updatePositionInfo(axis, delay);
-				}
-			}
-		}, delay);	// 一定时间间隔后刷新一次位置信息;
-	}
+
+//	private boolean isDeviceMoving;
+//
+//	/**
+//	 * 当设备移动的过程中，需要定时更新当前位置；
+//	 */
+//	private void updatePositionInfo(final int axis, final long delay) {
+//		mHandler.postDelayed(new Runnable() {
+//
+//			@Override
+//			public void run() {
+//				if (isDeviceMoving) {
+//					// 执行命令，获取当前位置信息
+//					executeGetPosition(axis);
+//					updatePositionInfo(axis, delay);
+//				}
+//			}
+//		}, delay); // 一定时间间隔后刷新一次位置信息;
+//	}
 
 	// ------------------------------------------------//
 	// --------------- 执行操作命令 -----------------------//
@@ -296,9 +319,9 @@ public class RobotManager {
 
 		if (!this.executeCmd(data))
 			return false;
-		
+
 		// 修改运行速度后，需要同步的获取当前速度
-//		executeGetSpeed();
+		// executeGetSpeed();
 		return true;
 	}
 
@@ -355,10 +378,10 @@ public class RobotManager {
 
 		if (!this.executeCmd(data))
 			return false;
-		
+
 		// 500毫秒后，刷新位置信息；
-//		isDeviceMoving = true;
-//		updatePositionInfo(axis, 500);
+		// isDeviceMoving = true;
+		// updatePositionInfo(axis, 500);
 		return true;
 	}
 
@@ -368,15 +391,15 @@ public class RobotManager {
 	 * @return
 	 */
 	public boolean executeStopMove(int axis) {
-		isDeviceMoving = false;
+//		isDeviceMoving = false;
 		DataPackage data = DataPackage.getDataOfStopMove();
 		data.setAxis((byte) axis);
 
 		if (!this.executeCmd(data))
 			return false;
-		
+
 		// 停止前事实刷新下当前速度
-//		executeGetPosition(axis);
+		// executeGetPosition(axis);
 		return true;
 	}
 
@@ -429,7 +452,7 @@ public class RobotManager {
 	 */
 	public boolean executeGetPosition(int axis) {
 		DataPackage data = DataPackage.getDataOfGetPos();
-		data.setAxis((byte)axis);
+		data.setAxis((byte) axis);
 
 		return this.executeCmd(data);
 	}
@@ -503,20 +526,24 @@ public class RobotManager {
 		worker.setWriteListener(new OnWriteListener() {
 
 			@Override
-			public void onWriteSuccess(BluetoothGattCharacteristic characteristic) {
+			public void onWriteSuccess(byte[] value) {
 				// TODO Auto-generated method stub
 			}
 
 			@Override
-			public void onResponse(BluetoothGattCharacteristic characteristic) {
+			public void onResponse(byte[] value) {
 				mcurrWorker.onResponse();
-				DataPackage repo = DataPackage.create(characteristic.getValue());
+				DataPackage repo = DataPackage.create(value);
+				if (repo == null) {
+					// 無效命令
+					return;
+				}
 				if (repo.getCmd() == Command.GetSpeed || repo.getCmd() == Command.GetPos) {
 					// 获取速度，获取位置是下位机自动上传上来的
-					onReceiveData(repo);
-					mcurrWorker = null;
+//					onReceiveData(repo);
+//					mcurrWorker = null;
 					// 执行下一条命令
-//					processNextCmd();
+					// processNextCmd();
 				} else {
 					if (repo.isReponseNormal()) {
 						// 验证成功
