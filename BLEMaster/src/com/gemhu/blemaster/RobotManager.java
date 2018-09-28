@@ -3,6 +3,8 @@ package com.gemhu.blemaster;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import com.gemhu.blemaster.DataPackage.Command;
+
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -296,7 +298,7 @@ public class RobotManager {
 			return false;
 		
 		// 修改运行速度后，需要同步的获取当前速度
-		executeGetSpeed();
+//		executeGetSpeed();
 		return true;
 	}
 
@@ -355,8 +357,8 @@ public class RobotManager {
 			return false;
 		
 		// 500毫秒后，刷新位置信息；
-		isDeviceMoving = true;
-		updatePositionInfo(axis, 500);
+//		isDeviceMoving = true;
+//		updatePositionInfo(axis, 500);
 		return true;
 	}
 
@@ -374,7 +376,7 @@ public class RobotManager {
 			return false;
 		
 		// 停止前事实刷新下当前速度
-		executeGetPosition(axis);
+//		executeGetPosition(axis);
 		return true;
 	}
 
@@ -503,14 +505,19 @@ public class RobotManager {
 			@Override
 			public void onWriteSuccess(BluetoothGattCharacteristic characteristic) {
 				// TODO Auto-generated method stub
-
 			}
 
 			@Override
 			public void onResponse(BluetoothGattCharacteristic characteristic) {
 				mcurrWorker.onResponse();
 				DataPackage repo = DataPackage.create(characteristic.getValue());
-				if (!repo.isUpload()) {
+				if (repo.getCmd() == Command.GetSpeed || repo.getCmd() == Command.GetPos) {
+					// 获取速度，获取位置是下位机自动上传上来的
+					onReceiveData(repo);
+					mcurrWorker = null;
+					// 执行下一条命令
+//					processNextCmd();
+				} else {
 					if (repo.isReponseNormal()) {
 						// 验证成功
 						mcurrWorker = null;
@@ -528,11 +535,6 @@ public class RobotManager {
 							sendData(mcurrWorker);
 						}
 					}
-				} else {
-					onReceiveData(repo);
-					mcurrWorker = null;
-					// 执行下一条命令
-					processNextCmd();
 				}
 			}
 

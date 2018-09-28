@@ -148,6 +148,7 @@ namespace ConsoleApp1
             //
             if (datas[0] == 0xAA)
             {
+                datas[0] = 0x55;
                 // 下发命令；数据校验
                 if (getCheckCode(datas) != datas[5])
                 {
