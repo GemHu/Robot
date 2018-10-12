@@ -43,7 +43,7 @@ public class RobotManager {
 	private int mSendCount = 0;
 	private static Toast mToast;
 	
-	private void toast(String text) {
+	public void toast(String text) {
 		if (mToast == null && mContext == null)
 			return;
 		
@@ -85,7 +85,7 @@ public class RobotManager {
 					if (pkg == null)
 						return;
 					
-					toast("接受到的命令：" + pkg.getKey());
+//					toast("接受到的命令：" + pkg.getKey());
 					if (pkg.isGetSpeed() || pkg.isGetPos()) {
 						onReceiveData(pkg);
 					} else if (mcurrWorker != null && mcurrWorker.getWriteListener() != null) {

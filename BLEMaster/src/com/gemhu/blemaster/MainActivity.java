@@ -215,6 +215,7 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 				
 				if (currView != null)
 				{
+					pos = (float)(Math.round(pos * 10)) / 10;
 					String value = "";
 					if (pos > 0)
 						value = ("+" + pos);
