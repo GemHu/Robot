@@ -166,6 +166,7 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 		}
 	}
 
+	@SuppressLint("DefaultLocale")
 	private void initRobotManager() {
 		this.mRobotManager = new RobotManager(this);
 		this.mRobotManager.setOnConnectChangedListener(new OnConnectChangedListener() {
@@ -215,14 +216,9 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 				
 				if (currView != null)
 				{
-					pos = (float)(Math.round(pos * 10)) / 10;
-					String value = "";
+					String value = String.format("%.1f", pos);
 					if (pos > 0)
-						value = ("+" + pos);
-					else if (pos < 0)
-						value = (pos + "");
-					else 
-						value = "0.0";
+						value = ("+" + value);
 					currView.setText(value + "°"); 
 				}
 			}
