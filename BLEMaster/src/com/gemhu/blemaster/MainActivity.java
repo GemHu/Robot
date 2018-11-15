@@ -219,6 +219,8 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 					String value = String.format("%.1f", pos);
 					if (pos > 0)
 						value = ("+" + value);
+					else if (pos == 0)
+						value = "0.0";
 					currView.setText(value + "°"); 
 				}
 			}
